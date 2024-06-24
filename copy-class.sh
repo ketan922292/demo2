@@ -1,7 +1,7 @@
 #!/bin/bash
 git add .
 git commit -m "added new files"
-git push git@github.com:developer-bagic-02/demo.git
+git push git@github.com:developer-bagic-02/demo2.git
 SOURCE_DIR="target/"
 DEST_DIR="/h/changes-class"
 
