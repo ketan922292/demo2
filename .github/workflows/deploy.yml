@@ -27,38 +27,14 @@ jobs:
           mkdir -p package/WEB-INF/classes
           cp -r target/classes/* package/WEB-INF/classes/
           cp -r src/main/webapp/* package/  # Adjust this path based on your webapp files location
-
       - name: Create SSH directory
         run: mkdir -p ~/.ssh
 
       - name: Add server to known_hosts
         run: |
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-
       - name: Debug private key
         run: |
           echo "${{ secrets.PRIVATE_KEY }}" > private_key.pem
-          chmod 600 private_key.pem
           cat private_key.pem  # Only for debugging, remove in production
-
-      - name: Deploy to Tomcat Server
-        env:
-          SERVER_IP: ${{ secrets.SERVER_IP }}
-          USERNAME: ${{ secrets.USERNAME }}
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-          TOMCAT_DIR: ${{ secrets.TOMCAT_DIR }}
-        run: |
-          echo "Preparing to deploy to server..."
-          echo "Using SERVER_IP: $SERVER_IP"
-          echo "Using USERNAME: $USERNAME"
-          echo "Attempting SCP transfer..."
-          scp -i private_key.pem -r package $USERNAME@$SERVER_IP:/tmp/
-          echo "Attempting SSH connection..."
-          ssh -i private_key.pem $USERNAME@$SERVER_IP << 'EOF'
-            echo "Connected to $SERVER_IP"
-            tar -xzf /tmp/package/package.tar.gz -C /tmp/package/
-            sudo rm -rf $TOMCAT_DIR/*
-            sudo cp -r /tmp/package/* $TOMCAT_DIR/
-            sudo rm -rf /tmp/package /tmp/package.tar.gz
-            sudo systemctl restart tomcat  # Adjust this command based on your server setup
-          EOF
+          chmod 400 private_key.pem
