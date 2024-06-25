@@ -29,11 +29,6 @@ jobs:
           cp -r src/main/webapp/* package/  # Adjust this path based on your webapp files location
           tar -czf package.tar.gz -C package .
 
-      - name: Create SSH directory and known_hosts file
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-        shell: /usr/bin/bash -e {0}
 
       - name: Deploy to Tomcat Server
         env:
