@@ -27,14 +27,44 @@ jobs:
           mkdir -p package/WEB-INF/classes
           cp -r target/classes/* package/WEB-INF/classes/
           cp -r src/main/webapp/* package/  # Adjust this path based on your webapp files location
-      - name: Create SSH directory
-        run: mkdir -p ~/.ssh
+          tar -czf package.tar.gz -C package .
 
-      - name: Add server to known_hosts
+      - name: Create SSH directory and known_hosts file
         run: |
+          mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-      - name: Debug private key
+
+      - name: Deploy to Tomcat Server
+        env:
+          JAVA_HOME: /opt/hostedtoolcache/Java_Adopt_jdk/17.0.11-9/x64
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          USERNAME: ${{ secrets.USERNAME }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          TOMCAT_DIR: ${{ secrets.TOMCAT_DIR }}
         run: |
-          echo "${{ secrets.PRIVATE_KEY }}" > private_key.pem
-          cat private_key.pem  # Only for debugging, remove in production
-          chmod 400 private_key.pem
+          echo "Preparing to deploy to server..."
+          echo "Using SERVER_IP: $SERVER_IP"
+          echo "Using USERNAME: $USERNAME"
+          
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+          
+          echo "Attempting SCP transfer..."
+          scp -i private_key.pem package.tar.gz $USERNAME@$SERVER_IP:/tmp/
+          
+          echo "Attempting SSH connection..."
+          ssh -i private_key.pem $USERNAME@$SERVER_IP << 'EOF'
+            echo "Connected to $SERVER_IP"
+            
+            if [ ! -f /tmp/package.tar.gz ]; then
+              echo "Error: /tmp/package.tar.gz not found."
+              exit 1
+            fi
+
+            tar -xzf /tmp/package.tar.gz -C /tmp/
+            sudo rm -rf $TOMCAT_DIR/*
+            sudo cp -r /tmp/package/* $TOMCAT_DIR/
+            sudo rm -rf /tmp/package /tmp/package.tar.gz
+            sudo systemctl restart tomcat  # Adjust this command based on your server setup
+          EOF
+
