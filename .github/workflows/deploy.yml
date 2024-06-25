@@ -33,6 +33,7 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+        shell: /usr/bin/bash -e {0}
 
       - name: Deploy to Tomcat Server
         env:
@@ -50,10 +51,10 @@ jobs:
           chmod 600 private_key.pem
           
           echo "Attempting SCP transfer..."
-          scp -i private_key.pem package.tar.gz $USERNAME@$SERVER_IP:/tmp/
+          scp -v -i private_key.pem package.tar.gz $USERNAME@$SERVER_IP:/tmp/ || { echo "SCP failed"; exit 1; }
           
           echo "Attempting SSH connection..."
-          ssh -i private_key.pem $USERNAME@$SERVER_IP << 'EOF'
+          ssh -v -i private_key.pem $USERNAME@$SERVER_IP << 'EOF'
             echo "Connected to $SERVER_IP"
             
             if [ ! -f /tmp/package.tar.gz ]; then
@@ -61,10 +62,10 @@ jobs:
               exit 1
             fi
 
-            tar -xzf /tmp/package.tar.gz -C /tmp/
+            tar -xzf /tmp/package.tar.gz -C /tmp/ || { echo "Tar extraction failed"; exit 1; }
             sudo rm -rf $TOMCAT_DIR/*
             sudo cp -r /tmp/package/* $TOMCAT_DIR/
             sudo rm -rf /tmp/package /tmp/package.tar.gz
             sudo systemctl restart tomcat  # Adjust this command based on your server setup
           EOF
-
+        shell: /usr/bin/bash -e {0}
