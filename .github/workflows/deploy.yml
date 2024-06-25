@@ -28,14 +28,13 @@ jobs:
           cp -r target/classes/* package/WEB-INF/classes/
           cp -r src/main/webapp/* package/  # Adjust this path based on your webapp files location
 
-      - name: Check environment variables
+      - name: Add server to known_hosts
         run: |
-          echo "SERVER_IP: ${{ secrets.SERVER_IP }}"
-          echo "USERNAME: ${{ secrets.USERNAME }}"
-          echo "TOMCAT_DIR: ${{ secrets.TOMCAT_DIR }}"
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
       - name: Deploy to Tomcat Server
         env:
+          JAVA_HOME: /opt/hostedtoolcache/Java_Adopt_jdk/17.0.11-9/x64
           SERVER_IP: ${{ secrets.SERVER_IP }}
           USERNAME: ${{ secrets.USERNAME }}
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
@@ -44,15 +43,17 @@ jobs:
           echo "Preparing to deploy to server..."
           echo "Using SERVER_IP: $SERVER_IP"
           echo "Using USERNAME: $USERNAME"
-          echo "${{ secrets.PRIVATE_KEY }}" > private_key.pem
+          echo "$PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
           tar -czf package.tar.gz -C package .
+          echo "Attempting SCP transfer..."
           scp -i private_key.pem package.tar.gz $USERNAME@$SERVER_IP:/tmp/
+          echo "Attempting SSH connection..."
           ssh -i private_key.pem $USERNAME@$SERVER_IP << 'EOF'
+            echo "Connected to $SERVER_IP"
             tar -xzf /tmp/package.tar.gz -C /tmp/
             rm -rf $TOMCAT_DIR/*
             cp -r /tmp/package/* $TOMCAT_DIR/
             rm -rf /tmp/package /tmp/package.tar.gz
             sudo systemctl restart tomcat  # Change this command based on your server setup
           EOF
-
