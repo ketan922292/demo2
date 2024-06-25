@@ -1,118 +1,49 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.6.3</version>
-		<relativePath /> <!-- lookup parent from repository -->
-	</parent>
-	<groupId>com.otp.demo</groupId>
-	<artifactId>OtpProject</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name>OtpProject</name>
-	<description>This Project is based on otp</description>
-	<packaging>war</packaging>
-	<properties>
-		<java.version>17</java.version>
-	</properties>
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
+name: Deploy to Tomcat Server
 
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.17</version>
-		</dependency>
-		<dependency>
-			<groupId>jakarta.platform</groupId>
-			<artifactId>jakarta.jakartaee-api</artifactId>
-			<version>9.1.0</version> <!-- Use the appropriate version -->
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>javax.servlet-api</artifactId>
-			<version>4.0.1</version> <!-- Use the appropriate version -->
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<version>2.15.0</version> <!-- Use a version that is compatible with
-			your Spring Boot version -->
-		</dependency>
-		<!-- Add WebLogic-specific dependencies -->
+on:
+  push:
+    branches:
+      - master
 
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-tomcat</artifactId>
-			<scope>provided</scope>
-		</dependency>
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
 
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-core</artifactId>
-			<version>2.15.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-annotations</artifactId>
-			<version>2.15.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.json</groupId>
-			<artifactId>json</artifactId>
-			<version>20230227</version>
-		</dependency>
-	</dependencies>
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-	<!--<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</build>-->
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
 
-	<build>
-		<plugins>
-			<!-- Spring Boot Maven Plugin -->
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-				<configuration>
-					<mainClass>com.otp.demo.OtpProjectApplication</mainClass>
-					<!-- If needed, configure additional options -->
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version> <!-- Update to the latest stable version -->
-			</plugin>
+      - name: Build with Maven
+        run: mvn clean package
 
-			<!-- Maven WAR Plugin -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-war-plugin</artifactId>
-				<version>3.3.1</version> <!-- Use the appropriate version -->
-				<configuration>
-					<failOnMissingWebXml>false</failOnMissingWebXml>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+      - name: Package compiled files
+        run: |
+          mkdir -p package/WEB-INF/classes
+          cp -r target/classes/* package/WEB-INF/classes/
+          cp -r src/main/webapp/* package/  # Adjust this path based on your webapp files location
 
-</project>
+      - name: Deploy to Tomcat Server
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          USERNAME: ${{ secrets.USERNAME }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          TOMCAT_DIR: ${{ secrets.TOMCAT_DIR }}
+        run: |
+          echo "${{ secrets.PRIVATE_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
+          tar -czf package.tar.gz -C package .
+          scp -i private_key.pem package.tar.gz $USERNAME@$SERVER_IP:/tmp/
+          ssh -i private_key.pem $USERNAME@$SERVER_IP << 'EOF'
+            tar -xzf /tmp/package.tar.gz -C /tmp/
+            rm -rf $TOMCAT_DIR/*
+            cp -r /tmp/package/* $TOMCAT_DIR/
+            rm -rf /tmp/package /tmp/package.tar.gz
+            # Restart Tomcat server if necessary
+            sudo systemctl restart tomcat  # Change this command based on your server setup
+          EOF
