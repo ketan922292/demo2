@@ -35,6 +35,12 @@ jobs:
         run: |
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
+      - name: Debug private key
+        run: |
+          echo "${{ secrets.PRIVATE_KEY }}" > private_key.pem
+          cat private_key.pem  # Only for debugging, remove in production
+          chmod 600 private_key.pem
+
       - name: Deploy to Tomcat Server
         env:
           JAVA_HOME: /opt/hostedtoolcache/Java_Adopt_jdk/17.0.11-9/x64
@@ -46,9 +52,6 @@ jobs:
           echo "Preparing to deploy to server..."
           echo "Using SERVER_IP: $SERVER_IP"
           echo "Using USERNAME: $USERNAME"
-          echo "$PRIVATE_KEY" > private_key.pem
-          chmod 600 private_key.pem
-          tar -czf package.tar.gz -C package .
           echo "Attempting SCP transfer..."
           scp -i private_key.pem package.tar.gz $USERNAME@$SERVER_IP:/tmp/
           echo "Attempting SSH connection..."
