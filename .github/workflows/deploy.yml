@@ -41,6 +41,9 @@ jobs:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           TOMCAT_DIR: ${{ secrets.TOMCAT_DIR }}
         run: |
+          echo "Preparing to deploy to server..."
+          echo "Using SERVER_IP: $SERVER_IP"
+          echo "Using USERNAME: $USERNAME"
           echo "${{ secrets.PRIVATE_KEY }}" > private_key.pem
           chmod 600 private_key.pem
           tar -czf package.tar.gz -C package .
@@ -50,6 +53,5 @@ jobs:
             rm -rf $TOMCAT_DIR/*
             cp -r /tmp/package/* $TOMCAT_DIR/
             rm -rf /tmp/package /tmp/package.tar.gz
-            # Restart Tomcat server if necessary
             sudo systemctl restart tomcat  # Change this command based on your server setup
           EOF
