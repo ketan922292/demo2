@@ -40,6 +40,3 @@ jobs:
           echo "${{ secrets.PRIVATE_KEY }}" > private_key.pem
           cat private_key.pem  # Only for debugging, remove in production
           chmod 600 private_key.pem
-
-
-          EOF
