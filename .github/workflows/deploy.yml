@@ -60,9 +60,3 @@ jobs:
             rm /tmp/package.tar.gz
           EOF
 
-          echo "Restarting Tomcat server..."
-          ssh -i private_key.pem $USERNAME@$SERVER_IP << 'EOF'
-            $TOMCAT_DIR/bin/shutdown.sh || { echo "Tomcat shutdown failed"; exit 1; }
-            sleep 5
-            $TOMCAT_DIR/bin/startup.sh || { echo "Tomcat startup failed"; exit 1; }
-          EOF
