@@ -10,10 +10,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Build with Maven
+        run: mvn clean package
+
+      - name: Package compiled files
+        run: |
+          mkdir -p package/WEB-INF/classes
+          cp -r target/classes/* package/WEB-INF/classes/
+          cp -r src/main/webapp/* package/  # Adjust this path based on your webapp files location
+
       - name: Check environment variables
         run: |
           echo "SERVER_IP: ${{ secrets.SERVER_IP }}"
           echo "USERNAME: ${{ secrets.USERNAME }}"
           echo "TOMCAT_DIR: ${{ secrets.TOMCAT_DIR }}"
 
+      - name: Deploy to Tomcat Server
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          USERNAME: ${{ secrets.USERNAME }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          TOMCAT_DIR: ${{ secrets.TOMCAT_DIR }}
+        run: |
+          echo "Preparing to deploy to server..."
+          echo "Using SERVER_IP: $SERVER_IP"
+          echo "Using USERNAME: $USERNAME"
+          echo "${{ secrets.PRIVATE_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
+          tar -czf package.tar.gz -C package .
+          scp -i private_key.pem package.tar.gz $USERNAME@$SERVER_IP:/tmp/
+          ssh -i private_key.pem $USERNAME@$SERVER_IP << 'EOF'
+            tar -xzf /tmp/package.tar.gz -C /tmp/
+            rm -rf $TOMCAT_DIR/*
+            cp -r /tmp/package/* $TOMCAT_DIR/
+            rm -rf /tmp/package /tmp/package.tar.gz
+            sudo systemctl restart tomcat  # Change this command based on your server setup
+          EOF
 
