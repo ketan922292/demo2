@@ -16,24 +16,17 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v2
         with:
-          distribution: 'adopt'  # You can change this to another distribution like 'zulu' if preferred
-          java-version: '11'  
-          java-package: 'jdk'
-          architecture: 'x64'
-          check-latest: false
-          overwrite-settings: true
+          distribution: 'adopt'
+          java-version: '17'
 
-      - name: Compile Java files
-        run: |
-          mkdir -p classes
-          find src -name "*.java" > sources.txt
-          javac -d ./classes @sources.txt
+      - name: Build with Maven
+        run: mvn clean package
 
       - name: Package compiled files
         run: |
           mkdir -p package/WEB-INF/classes
-          cp -r ./classes/* package/WEB-INF/classes/
-          cp -r ./webapp/* package/  # Assuming your webapp files are in a webapp directory
+          cp -r target/classes/* package/WEB-INF/classes/
+          cp -r src/main/webapp/* package/  # Adjust this path based on your webapp files location
 
       - name: Deploy to Tomcat Server
         env:
