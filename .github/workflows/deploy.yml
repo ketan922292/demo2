@@ -55,8 +55,8 @@ jobs:
           ssh -i private_key.pem $USERNAME@$SERVER_IP << 'EOF'
             echo "Connected to $SERVER_IP"
             tar -xzf /tmp/package.tar.gz -C /tmp/
-            rm -rf $TOMCAT_DIR/*
-            cp -r /tmp/package/* $TOMCAT_DIR/
-            rm -rf /tmp/package /tmp/package.tar.gz
+            sudo rm -rf $TOMCAT_DIR/*
+            sudo cp -r /tmp/package/* $TOMCAT_DIR/
+            sudo rm -rf /tmp/package /tmp/package.tar.gz
             sudo systemctl restart tomcat  # Change this command based on your server setup
           EOF
