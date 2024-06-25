@@ -28,6 +28,12 @@ jobs:
           cp -r target/classes/* package/WEB-INF/classes/
           cp -r src/main/webapp/* package/  # Adjust this path based on your webapp files location
 
+      - name: Check environment variables
+        run: |
+          echo "SERVER_IP: ${{ secrets.SERVER_IP }}"
+          echo "USERNAME: ${{ secrets.USERNAME }}"
+          echo "TOMCAT_DIR: ${{ secrets.TOMCAT_DIR }}"
+
       - name: Deploy to Tomcat Server
         env:
           SERVER_IP: ${{ secrets.SERVER_IP }}
