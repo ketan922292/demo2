@@ -16,7 +16,15 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v2
         with:
-          java-version: '11'  # Specify the Java version you need
+          distribution: 'adopt'  # You can change this to another distribution like 'zulu' if preferred
+          java-version: '11'  
+          java-package: 'jdk'
+          architecture: 'x64'
+          check-latest: false
+          server-id: 'github'
+          server-username: ${{ secrets.GITHUB_ACTOR }}
+          server-password: ${{ secrets.GITHUB_TOKEN }}
+          overwrite-settings: true
 
       - name: Compile Java files
         run: javac -d ./classes src/**/*.java
@@ -46,4 +54,3 @@ jobs:
             # Restart Tomcat server if necessary
             sudo systemctl restart tomcat  # Change this command based on your server setup
           EOF
-
