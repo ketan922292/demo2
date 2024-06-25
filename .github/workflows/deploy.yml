@@ -21,13 +21,13 @@ jobs:
           java-package: 'jdk'
           architecture: 'x64'
           check-latest: false
-          server-id: 'github'
-          server-username: ${{ secrets.GITHUB_ACTOR }}
-          server-password: ${{ secrets.GITHUB_TOKEN }}
           overwrite-settings: true
 
       - name: Compile Java files
-        run: javac -d ./classes src/**/*.java
+        run: |
+          mkdir -p classes
+          find src -name "*.java" > sources.txt
+          javac -d ./classes @sources.txt
 
       - name: Package compiled files
         run: |
