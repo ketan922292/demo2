@@ -16,34 +16,42 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v2
         with:
-          java-version: '11'  # Specify the Java version you need
+          distribution: 'adopt'
+          java-version: '17'
 
-      - name: Compile Java files
-        run: javac -d ./classes src/**/*.java
+      - name: Build with Maven
+        run: mvn clean package
 
       - name: Package compiled files
         run: |
           mkdir -p package/WEB-INF/classes
-          cp -r ./classes/* package/WEB-INF/classes/
-          cp -r ./webapp/* package/  # Assuming your webapp files are in a webapp directory
+          cp -r target/classes/* package/WEB-INF/classes/
+          cp -r src/main/webapp/* package/  # Adjust this path based on your webapp files location
+          tar -czf package.tar.gz -C package .
+
+      - name: List directory contents
+        run: ls -la
+      - name: Create SSH directory and known_hosts file
+        run: |
+          mkdir -p ~/.ssh
+          touch ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+        shell: /usr/bin/bash -e {0}
 
       - name: Deploy to Tomcat Server
         env:
+          JAVA_HOME: /opt/hostedtoolcache/Java_Adopt_jdk/17.0.11-9/x64
           SERVER_IP: ${{ secrets.SERVER_IP }}
           USERNAME: ${{ secrets.USERNAME }}
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           TOMCAT_DIR: ${{ secrets.TOMCAT_DIR }}
         run: |
-          echo "${{ secrets.PRIVATE_KEY }}" > private_key.pem
+          echo "Preparing to deploy to server..."
+          echo "Using SERVER_IP: $SERVER_IP"
+          echo "Using USERNAME: $USERNAME"
+          
+          echo "$PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
-          tar -czf package.tar.gz -C package .
-          scp -i private_key.pem package.tar.gz $USERNAME@$SERVER_IP:/tmp/
-          ssh -i private_key.pem $USERNAME@$SERVER_IP << 'EOF'
-            tar -xzf /tmp/package.tar.gz -C /tmp/
-            rm -rf $TOMCAT_DIR/*
-            cp -r /tmp/package/* $TOMCAT_DIR/
-            rm -rf /tmp/package /tmp/package.tar.gz
-            # Restart Tomcat server if necessary
-            sudo systemctl restart tomcat  # Change this command based on your server setup
-          EOF
-
+          
+          echo "Attempting SCP transfer..."
+          scp -i private_key.pem package.tar.gz $USERNAME@$SERVER_IP:/tmp/ || { echo "SCP failed"; exit 1; }
