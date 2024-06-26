@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 public class CityService {
 
 	public String getCities() {
-		return "Mumbai,Vashi,Thane,Panvel,Ghansoli,Vikroli,kandivali";
+		return "Mumbai,Vashi,Thane,Panvel,Ghansoli,Vikroli,kandivali,Rabale,vashi";
 	}
 	
 	
