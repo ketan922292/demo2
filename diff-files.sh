@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# AWS instance details
+aws_ip="13.201.72.80"
+aws_user="ec2-user"
+service_dir="/opt/tomcat/webapps/OtpProject-0.0.1-SNAPSHOT/WEB-INF/classes"
+pem_file="/g/workspace/kele.pem"  # Update this with the actual path to your .pem file
+tomcat_bin_dir="/opt/tomcat/bin"  # Update this with the actual path to your Tomcat bin directory
+
 # Fetch the latest changes
 git fetch origin
 
@@ -17,36 +24,53 @@ echo "$modified_files"
 # Clean and compile the project
 mvn clean compile
 
-# AWS instance details
-aws_ip="13.201.72.80"
-aws_user="ec2-user"  # Replace with your AWS instance's SSH username
+# Check the Maven status
+if [ $? -ne 0 ]; then
+  echo "Maven compilation failed. Exiting."
+  exit 1
+fi
 
-# Directory paths on AWS instance
-service_dir="/opt/tomcat/webapps/OtpProject-0.0.1-SNAPSHOT/WEB-INF/classes/com/web/service"
-controller_dir="/opt/tomcat/webapps/OtpProject-0.0.1-SNAPSHOT/WEB-INF/classes/com/web/controller"
+# Create a directory for the patch
+mkdir -p patch
 
-# Copy the compiled class files to the AWS instance
+# Iterate over each modified Java file
 for file in $modified_files; do
-  # Extract the class file path from the Java file path
-  class_file=$(echo $file | sed 's|^src/main/java|target/classes|' | sed 's|\.java$|.class|')
-  echo "Looking for class file: $class_file"
+  echo "Processing file: $file"
 
-  if [ -f "$class_file" ]; then
-    # Determine destination directory based on file type
-    if echo "$file" | grep -q "/service/"; then
-      dest_dir="$service_dir"
-    elif echo "$file" | grep -q "/controller/"; then
-      dest_dir="$controller_dir"
-    else
-      echo "Unknown file type: $file"
-      continue
-    fi
+  # Convert Java source path to class path
+  class_file=$(echo $file | sed 's/src\/main\/java\///' | sed 's/\.java$/.class/')
+  class_file_path="/g/workspace/WebDemo/target/classes/$class_file"
+  echo "Expected class file: $class_file_path"
 
-    echo "Copying $class_file to $dest_dir."
-    # Use scp to copy the file to AWS instance
-    scp -i /g/workspace/kele.pem "$class_file" "$aws_user@$aws_ip:$dest_dir/"
+  # Check if the class file exists and copy it
+  if [ -f "$class_file_path" ]; then
+    echo "Found compiled class file: $class_file_path"
+    mkdir -p $(dirname "patch/$class_file")
+    cp "$class_file_path" "patch/$class_file"
   else
-    echo "Class file not found: $class_file"
+    echo "Compiled class file not found for: $file"
   fi
 done
 
+echo "Patch created with modified class files."
+
+# Use scp to copy the patch to the AWS instance
+echo "Copying files to AWS instance..."
+scp -i $pem_file -r patch/* ${aws_user}@${aws_ip}:${service_dir}
+
+if [ $? -eq 0 ]; then
+  echo "Files successfully copied to AWS instance."
+else
+  echo "Failed to copy files to AWS instance."
+  exit 1
+fi
+
+# Restart the Tomcat server using shutdown.sh and startup.sh
+echo "Restarting Tomcat server..."
+ssh -i $pem_file ${aws_user}@${aws_ip} "bash -c 'cd $tomcat_bin_dir && sudo ./shutdown.sh && sleep 5 && sudo ./startup.sh'"
+
+if [ $? -eq 0 ]; then
+  echo "Tomcat server restarted successfully."
+else
+  echo "Failed to restart Tomcat server."
+fi
