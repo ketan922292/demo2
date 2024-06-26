@@ -12,7 +12,7 @@ public class CityController {
 	@Autowired
 	CityService ser;
 
-	@GetMapping("/cities")
+	@GetMapping("/citiess")
 	public String allCities() {
 		return ser.getCities();
 	}
