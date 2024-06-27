@@ -65,7 +65,7 @@ jobs:
           fi
 
           echo "Restarting Tomcat server..."
-          ssh -i private_key.pem $USERNAME@$SERVER_IP "bash -c 'cd $TOMCAT_DIR/bin && sudo ./shutdown.sh && sleep 5 && sudo ./startup.sh'"
+          ssh -i private_key.pem $USERNAME@$SERVER_IP "bash -c 'sh /opt/tomcat/shutdown.sh && sleep 5 && sudo sh /opt/tomcat/startup.sh'"
           
           # Clean up the private key file
           rm private_key.pem
