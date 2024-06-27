@@ -64,8 +64,14 @@ jobs:
             exit 1
           fi
 
-          echo "Debugging: Listing directory structure"
+          echo "Debugging: Listing /opt directory structure"
+          ssh -i private_key.pem $USERNAME@$SERVER_IP "ls -la /opt"
+
+          echo "Debugging: Listing /opt/tomcat directory structure"
           ssh -i private_key.pem $USERNAME@$SERVER_IP "ls -la /opt/tomcat"
+
+          echo "Debugging: Finding shutdown.sh in /opt"
+          ssh -i private_key.pem $USERNAME@$SERVER_IP "find /opt -name shutdown.sh"
 
           echo "Restarting Tomcat server..."
           ssh -i private_key.pem $USERNAME@$SERVER_IP "bash -c 'sh /opt/tomcat/shutdown.sh && sleep 5 && sudo sh /opt/tomcat/startup.sh'"
