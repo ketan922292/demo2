@@ -64,6 +64,9 @@ jobs:
             exit 1
           fi
 
+          echo "Debugging: Listing directory structure"
+          ssh -i private_key.pem $USERNAME@$SERVER_IP "ls -la /opt/tomcat"
+
           echo "Restarting Tomcat server..."
           ssh -i private_key.pem $USERNAME@$SERVER_IP "bash -c 'sh /opt/tomcat/shutdown.sh && sleep 5 && sudo sh /opt/tomcat/startup.sh'"
           
