@@ -31,6 +31,7 @@ jobs:
 
       - name: List directory contents
         run: ls -la
+
       - name: Create SSH directory and known_hosts file
         run: |
           mkdir -p ~/.ssh
@@ -47,11 +48,24 @@ jobs:
           TOMCAT_DIR: ${{ secrets.TOMCAT_DIR }}
         run: |
           echo "Preparing to deploy to server..."
-          echo "Using SERVER_IP: $SERVER_IP"
-          echo "Using USERNAME: $USERNAME"
+          
+          # Do not echo sensitive data
+          # echo "Using SERVER_IP: $SERVER_IP"
+          # echo "Using USERNAME: $USERNAME"
           
           echo "$PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
           
           echo "Attempting SCP transfer..."
-          scp -i private_key.pem package.tar.gz $USERNAME@$SERVER_IP:/tmp/ || { echo "SCP failed"; exit 1; }
+          if scp -i private_key.pem package.tar.gz $USERNAME@$SERVER_IP:/tmp/; then
+            echo "SCP transfer successful"
+          else
+            echo "SCP failed"
+            exit 1
+          fi
+
+          echo "Restarting Tomcat server..."
+          ssh -i private_key.pem $USERNAME@$SERVER_IP "bash -c 'cd $TOMCAT_DIR/bin && sudo ./shutdown.sh && sleep 5 && sudo ./startup.sh'"
+          
+          # Clean up the private key file
+          rm private_key.pem
