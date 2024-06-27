@@ -24,9 +24,9 @@ jobs:
 
       - name: Package compiled files
         run: |
-          mkdir -p package/WEB-INF/classes
-          cp -r target/classes/* package/WEB-INF/classes/
-          cp -r src/main/webapp/* package/  # Adjust this path based on your webapp files location
+          mkdir -p package/webapps/OtpProject-0.0.1-SNAPSHOT/WEB-INF/classes
+          cp -r target/classes/com/web/service/* package/webapps/OtpProject-0.0.1-SNAPSHOT/WEB-INF/classes/
+          cp -r src/main/webapp/* package/webapps/OtpProject-0.0.1-SNAPSHOT/  # Adjust this path based on your webapp files location
           tar -czf package.tar.gz -C package .
 
       - name: List directory contents
