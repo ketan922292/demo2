@@ -64,18 +64,8 @@ jobs:
             exit 1
           fi
 
-          echo "Debugging: Listing /opt directory structure"
-          ssh -i private_key.pem $USERNAME@$SERVER_IP "ls -laR /opt"
-
-          echo "Debugging: Finding shutdown.sh"
-          ssh -i private_key.pem $USERNAME@$SERVER_IP "find / -name shutdown.sh"
-
-          echo "Debugging: Finding startup.sh"
-          ssh -i private_key.pem $USERNAME@$SERVER_IP "find / -name startup.sh"
-
-          # Commented out the restart command until we have the correct paths
-          # echo "Restarting Tomcat server..."
-          # ssh -i private_key.pem $USERNAME@$SERVER_IP "bash -c 'sh /opt/tomcat/shutdown.sh && sleep 5 && sudo sh /opt/tomcat/startup.sh'"
+          echo "Restarting Tomcat server..."
+          ssh -i private_key.pem $USERNAME@$SERVER_IP "bash -c 'sh /opt/tomcat/bin/shutdown.sh && sleep 5 && sudo sh /opt/tomcat/bin/startup.sh'"
           
           # Clean up the private key file
           rm private_key.pem
