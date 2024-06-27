@@ -64,6 +64,9 @@ jobs:
             exit 1
           fi
 
+          echo "Extracting package to Tomcat webapps directory..."
+          ssh -i private_key.pem $USERNAME@$SERVER_IP "tar -xzf /tmp/package.tar.gz -C $TOMCAT_DIR/webapps"
+
           echo "Restarting Tomcat server..."
           ssh -i private_key.pem $USERNAME@$SERVER_IP "bash -c 'sh /opt/tomcat/bin/shutdown.sh && sleep 5 && sudo sh /opt/tomcat/bin/startup.sh'"
           
