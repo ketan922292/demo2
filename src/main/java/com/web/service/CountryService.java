@@ -6,8 +6,10 @@ import org.springframework.stereotype.Service;
 public class CountryService {
 
 	public String getCountries() {
-		return "India, America, Africa,Afganistan,Maldives,Australia,Bangla";
-	}
+		return "India, America, Africa,Afganistan,Maldives,Australia,Canada,India";
+
 	
+	
+}
 	
 }
