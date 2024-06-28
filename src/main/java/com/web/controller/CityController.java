@@ -17,4 +17,9 @@ public class CityController {
 		return ser.getCities();
 	}
 
+	@PostMapping("/citiesssss")
+	public String add(String city){
+		return city;
+	}
+
 }
