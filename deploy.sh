@@ -1,7 +1,8 @@
 #!/bin/bash
+git pull origin master
 git add .
 git commit -m "added files"
-git push origin master
+git push origin master --force
 git pull origin master
 
 # Set variables
